@@ -5,7 +5,15 @@
    biblioteca, conversas, dashboard, chat, autenticação).
    ================================================================ */
 
-const API = "http://127.0.0.1:8000";
+// Antes era uma URL fixa (http://127.0.0.1:8000) — funcionava só na
+// sua máquina, e quebrava em produção porque o navegador tentava
+// buscar dado no 127.0.0.1 de quem está USANDO o site, não no
+// servidor de verdade. String vazia = caminho relativo, que resolve
+// sempre contra a própria origem de onde a página foi carregada —
+// funciona local (uvicorn servindo tudo em localhost:8000) e em
+// produção (Render, ou qualquer domínio futuro), sem precisar trocar
+// nada nunca mais.
+const API = "";
 
 // Monta o header Authorization pras rotas que exigem login (ver
 // auth.js). Rotas que ainda não exigem login simplesmente ignoram
