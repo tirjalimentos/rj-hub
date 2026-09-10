@@ -13,6 +13,7 @@ Rodar localmente:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from api.routes.auth import router as auth_router
@@ -49,6 +50,21 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 
 
-@app.get("/")
-def root():
+@app.get("/health")
+def health():
     return {"status": "ok", "app": APP_NAME, "version": APP_VERSION}
+
+
+# Serve o frontend (HTML/CSS/JS) a partir do mesmo serviço da API — um
+# único deploy na Render, sem precisar de CORS entre dois domínios
+# nem de um segundo serviço só pra arquivo estático (decisão tomada na
+# migração pra nuvem, ver CONTEXTO_PROJETO.md). "../frontend" porque o
+# Root Directory configurado na Render é "backend" — os dois ficam
+# lado a lado na raiz do repositório.
+#
+# Precisa ser a ÚLTIMA coisa registrada no app: StaticFiles com
+# html=True vira um "pega tudo" pra qualquer caminho não reconhecido
+# antes dele — se viesse ANTES das rotas de API acima, ele "roubaria"
+# essas rotas em vez de deixar a API responder. html=True faz "/"
+# servir frontend/index.html automaticamente.
+app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
