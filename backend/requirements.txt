@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+anthropic
+authlib
+pyjwt
+itsdangerous
+httpx
+python-dotenv
+pdfplumber
+python-docx
+python-multipart

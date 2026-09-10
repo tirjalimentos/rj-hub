@@ -1,0 +1,424 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RJ HUB — Produtividade Inteligente</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23AB0F15%22/><text x=%2250%22 y=%2266%22 font-size=%2250%22 font-family=%22sans-serif%22 font-weight=%22700%22 fill=%22%23E7C311%22 text-anchor=%22middle%22>RJ</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/chat-view.css">
+
+</head>
+<body>
+<!-- ================= SIDEBAR ================= -->
+<div class="sb-overlay" id="sbOverlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-mark">RJ</div>
+    <div class="sb-brand-text"><strong>RJ HUB</strong><span>Produtividade IA</span></div>
+  </div>
+
+  <button class="sb-new-chat" id="newConversationBtn">+ Nova conversa</button>
+
+  <nav class="sb-nav">
+    <button class="sb-item active" data-view="home">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      Início
+    </button>
+    <button class="sb-item" data-view="specialists">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path></svg>
+      Especialistas
+    </button>
+    <button class="sb-item" data-view="library" id="sbLibraryItem" style="display:none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      Biblioteca
+    </button>
+    <button class="sb-item" data-view="conversations">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+      Conversas
+    </button>
+    <button class="sb-item" data-view="dashboard">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+      Dashboard
+    </button>
+    <button class="sb-item" data-view="settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      Configurações
+    </button>
+    <button class="sb-item" data-view="admin" id="sbAdminItem" style="display:none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.5 8.5 9 10 5.5-1.5 9-5 9-10V6l-9-4z"></path><path d="M9 12l2 2 4-4"></path></svg>
+      Super-Admin
+    </button>
+  </nav>
+
+  <div class="sb-recent">
+    <div class="sb-recent-label">Conversas recentes</div>
+    <div class="sb-recent-list" id="sidebarRecentConversations">
+      <div class="sb-recent-empty">Carregando...</div>
+    </div>
+  </div>
+
+  <button onclick="iniciarLogin()" style="padding:8px 14px;border-radius:8px;border:none;background:var(--gold,#E7C311);color:var(--wine,#AB0F15);font-weight:700;cursor:pointer;">Entrar com Google</button>
+  <div class="sb-foot">
+    <div class="avatar-mini" id="sbFootAvatar">?</div>
+    <div class="sb-foot-text"><strong id="sbFootNome">Carregando...</strong><span id="sbFootEmail"></span></div>
+  </div>
+</aside>
+
+<!-- ================= SHELL ================= -->
+<div class="app-shell" id="appShell">
+  <header class="app-header topbar">
+    <div class="header-inner">
+      <div class="header-left">
+        <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Abrir menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="breadcrumb view-title" id="viewTitle">
+          <strong id="crumbMain">Início</strong><span class="crumb-sep" id="crumbSep">›</span><span id="crumbSub"></span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="ws-selector">
+          <button class="workspace-pill" id="wsBtn">
+            <i class="dot"></i>
+            <span id="wsBtnLabel">Workspace Geral</span>
+          </button>
+          <div class="ws-menu" id="wsMenu"></div>
+        </div>
+        <button class="top-btn" id="topSearchBtn">⌕ Busca</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+   <div class="content">
+    <div class="container">
+
+    <!-- ================= VIEW: INÍCIO ================= -->
+    <section class="view active" id="view-home">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow" id="homeEyebrow">Bom dia, Pedro</div>
+          <h1>Como posso ajudar hoje?</h1>
+          <p class="subtitle">Acesse o conhecimento da RJ Alimentos em um só lugar.</p>
+        </div>
+        <div class="hero-badge" id="homeHeroBadge">● Especialistas disponíveis</div>
+      </div>
+
+      <div class="section-title">
+        <h2>Continue de onde parou</h2>
+        <a href="#" id="seeAllConversationsLink">Ver todas as conversas →</a>
+      </div>
+      <div id="homeRecentConversation" class="fade-up"></div>
+
+      <div class="section-title" style="margin-top:8px;">
+        <h2 id="wsGridTitle">Especialistas do Workspace</h2>
+        <a href="#" id="seeAllSpecialistsLink">Ver especialistas →</a>
+      </div>
+      <div class="grid fade-up" id="wsSpecialistsGrid"></div>
+    </section>
+
+    <!-- ================= VIEW: ESPECIALISTAS ================= -->
+    <section class="view" id="view-specialists">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow">Conhecimento especializado</div>
+          <h1>Especialistas</h1>
+          <p class="subtitle">Converse com especialistas preparados para a realidade da RJ Alimentos.</p>
+        </div>
+      </div>
+      <div class="toolbar fade-up">
+        <input class="search" type="text" id="specSearch" placeholder="Buscar especialista por nome ou assunto...">
+        <button class="filter">Todos ▾</button>
+      </div>
+      <div class="grid fade-up" id="allSpecialistsGrid"></div>
+    </section>
+
+    <!-- ================= VIEW: BIBLIOTECA ================= -->
+    <section class="view" id="view-library">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow">Base de conhecimento</div>
+          <h1>Biblioteca</h1>
+          <p class="subtitle">Documentos que alimentam o conhecimento dos especialistas.</p>
+        </div>
+      </div>
+      <div class="toolbar fade-up">
+        <input class="search" type="text" placeholder="Buscar documentos, POPs, políticas...">
+        <button class="filter">Todas as categorias ▾</button>
+      </div>
+      <div class="card fade-up" id="libRecent"></div>
+    </section>
+
+    <!-- ================= VIEW: CONVERSAS ================= -->
+    <section class="view" id="view-conversations">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow">Seu histórico</div>
+          <h1>Conversas</h1>
+          <p class="subtitle">Retome uma conversa exatamente de onde parou.</p>
+        </div>
+      </div>
+      <div class="card fade-up" id="convList"></div>
+    </section>
+
+    <!-- ================= VIEW: DASHBOARD ================= -->
+    <section class="view" id="view-dashboard">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow">Indicadores</div>
+          <h1>Dashboard</h1>
+          <p class="subtitle">Visão geral do uso da inteligência corporativa.</p>
+        </div>
+      </div>
+      <div class="kpi-grid fade-up" id="dashStats"></div>
+      <div class="card chart fade-up">
+        <div class="section-title" style="margin-top:0;"><h2>Uso por especialista</h2><span style="font-size:10px;color:var(--ink-muted);">Conversas na semana</span></div>
+        <div class="bars" id="dashBars"></div>
+      </div>
+      <div class="card fade-up" style="margin-top:16px;padding:20px;">
+        <h4 style="font-size:13px;margin-bottom:14px;">Base de conhecimento</h4>
+        <div class="ring-wrap">
+          <div class="ring"><span>85%</span></div>
+          <p class="ring-note">85% dos especialistas com base atualizada.<br>Demais em revisão pelas áreas.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW: CONFIGURAÇÕES ================= -->
+    <section class="view" id="view-settings">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow">Preferências</div>
+          <h1>Configurações</h1>
+          <p class="subtitle">Ajuste a experiência do RJ HUB.</p>
+        </div>
+      </div>
+      <div class="settings-grid fade-up">
+        <div class="card config-card">
+          <h4>👤 Perfil</h4>
+          <div class="profile-row">
+            <div class="avatar" id="perfilAvatar">?</div>
+            <div><strong id="perfilNome">Carregando...</strong><span id="perfilEmail"></span></div>
+          </div>
+          <!-- Cargo/Departamento: o login Google (UsuarioAutenticado)
+               só traz e-mail, nome e foto — não temos esse dado ainda,
+               por isso "Não informado" em vez de um valor inventado. -->
+          <div class="config-row"><span class="sr-label">Cargo</span><span class="sr-sub">Não informado</span></div>
+          <div class="config-row"><span class="sr-label">Departamento</span><span class="sr-sub">Não informado</span></div>
+        </div>
+
+        <div class="card config-card">
+          <h4>🏢 Workspace</h4>
+          <div class="config-row">
+            <div><div class="sr-label">Workspace padrão</div><div class="sr-sub">Abrir automaticamente ao entrar</div></div>
+            <select class="set-select" id="defaultWsSelect"></select>
+          </div>
+          <div class="config-row">
+            <div><div class="sr-label">Lembrar último workspace</div></div>
+            <label class="switch"><input type="checkbox" checked><span class="slider-tog"></span></label>
+          </div>
+        </div>
+
+        <div class="card config-card">
+          <h4>🎨 Aparência</h4>
+          <div style="margin-bottom:6px;font-size:13px;color:var(--ink-muted);">Tema</div>
+          <div class="theme-opts">
+            <div class="theme-opt selected" data-theme="claro">Claro</div>
+            <div class="theme-opt" data-theme="escuro">Escuro</div>
+            <div class="theme-opt" data-theme="sistema">Sistema</div>
+          </div>
+          <div class="config-row" style="margin-top:6px;">
+            <div><div class="sr-label">Idioma</div></div>
+            <select class="set-select">
+              <option>Português (Brasil)</option>
+              <option>English</option>
+              <option>Español</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card config-card">
+          <h4>🔔 Notificações</h4>
+          <div class="config-row"><div><div class="sr-label">Novas respostas</div><div class="sr-sub">Quando um especialista responder</div></div><label class="switch"><input type="checkbox" checked><span class="slider-tog"></span></label></div>
+          <div class="config-row"><div><div class="sr-label">Atualizações da base</div><div class="sr-sub">Documentos novos ou revisados</div></div><label class="switch"><input type="checkbox" checked><span class="slider-tog"></span></label></div>
+          <div class="config-row"><div><div class="sr-label">Resumo semanal</div><div class="sr-sub">Toda segunda-feira por e-mail</div></div><label class="switch"><input type="checkbox"><span class="slider-tog"></span></label></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW: SUPER-ADMIN =================
+         Só fica visível (item na sidebar) se a checagem de permissão
+         em admin.js passar — ver initAdminPanel(). O HTML sempre
+         existe no DOM, só não é alcançável sem o item da sidebar. -->
+    <section class="view" id="view-admin">
+      <div class="hero fade-up">
+        <div>
+          <div class="eyebrow">Painel administrativo</div>
+          <h1>Super-Admin</h1>
+          <p class="subtitle">Gerencie especialistas, grupos de acesso, usuários, administradores e a base de conhecimento.</p>
+        </div>
+      </div>
+
+      <div class="admin-tabs fade-up">
+        <button class="admin-tab active" data-admin-tab="grupos">Grupos</button>
+        <button class="admin-tab" data-admin-tab="usuarios">Usuários</button>
+        <button class="admin-tab" data-admin-tab="conhecimento">Base de Conhecimento</button>
+        <button class="admin-tab" data-admin-tab="especialistas">Especialistas</button>
+        <button class="admin-tab" data-admin-tab="administradores">Administradores</button>
+      </div>
+
+      <!-- ---- Aba: Grupos ---- -->
+      <div class="admin-tab-panel active" id="adminTabGrupos">
+        <div class="toolbar fade-up">
+          <input class="search" type="text" id="adminNovoGrupoId" placeholder="id (ex: comercial)" style="max-width:200px;">
+          <input class="search" type="text" id="adminNovoGrupoNome" placeholder="Nome do grupo">
+          <button class="filter" id="adminCriarGrupoBtn">Criar grupo</button>
+        </div>
+        <div id="adminGruposList"></div>
+      </div>
+
+      <!-- ---- Aba: Usuários ---- -->
+      <div class="admin-tab-panel" id="adminTabUsuarios">
+        <div class="toolbar fade-up">
+          <input class="search" type="text" id="adminNovoUsuarioEmail" placeholder="E-mail do novo usuário (Google Workspace)...">
+          <button class="filter" id="adminAdicionarUsuarioBtn">Adicionar</button>
+        </div>
+        <div class="card fade-up" id="adminNovoUsuarioBox" style="display:none;padding:18px;margin-bottom:14px;"></div>
+        <div id="adminUsuariosList"></div>
+      </div>
+
+      <!-- ---- Aba: Base de Conhecimento ---- -->
+      <div class="admin-tab-panel" id="adminTabConhecimento">
+        <div class="toolbar fade-up">
+          <select class="set-select" id="adminEspecialistaSelect" style="flex:1;"></select>
+        </div>
+        <div class="card fade-up" style="padding:20px;margin-bottom:16px;">
+          <h4 style="font-size:13px;margin-bottom:12px;">Enviar novo documento</h4>
+          <div class="admin-upload-row">
+            <input type="file" id="adminUploadFile" accept=".pdf,.docx">
+            <input type="text" id="adminUploadTitulo" placeholder="Título (opcional — usa o nome do arquivo se vazio)">
+            <button class="open-btn" id="adminUploadBtn">Enviar</button>
+          </div>
+          <p class="admin-item-sub" id="adminUploadStatus" style="margin-top:8px;"></p>
+        </div>
+        <div id="adminDocumentosList"></div>
+      </div>
+
+      <!-- ---- Aba: Especialistas ---- -->
+      <div class="admin-tab-panel" id="adminTabEspecialistas">
+        <div class="card fade-up" style="padding:20px;margin-bottom:16px;">
+          <h4 style="font-size:13px;margin-bottom:12px;">Novo especialista</h4>
+          <div class="admin-upload-row">
+            <input type="text" id="adminNovoEspId" placeholder="id (ex: financeiro)" style="max-width:150px;">
+            <input type="text" id="adminNovoEspIcone" placeholder="ícone (emoji)" style="max-width:100px;">
+            <input type="text" id="adminNovoEspNome" placeholder="Nome" style="max-width:180px;">
+            <input type="text" id="adminNovoEspDesc" placeholder="Descrição curta" style="flex:1;min-width:220px;">
+            <button class="open-btn" id="adminCriarEspecialistaBtn">Criar</button>
+          </div>
+          <p class="admin-item-sub" style="margin-top:8px;">O especialista criado já fica visível na aba "Especialistas" pra quem tiver acesso. Pra liberar o acesso de verdade, vincule ele a um grupo na aba Grupos — criar aqui não vincula a nenhum grupo automaticamente.</p>
+        </div>
+        <div id="adminEspecialistasList"></div>
+      </div>
+
+      <!-- ---- Aba: Administradores ---- -->
+      <div class="admin-tab-panel" id="adminTabAdministradores">
+        <div class="toolbar fade-up">
+          <input class="search" type="text" id="adminNovoAdminEmail" placeholder="E-mail do novo Super-Admin...">
+          <button class="filter" id="adminPromoverBtn">Promover a Super-Admin</button>
+        </div>
+        <div id="adminAdministradoresList"></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW: CHAT (Especialista) =================
+         View integrada (não modal) — sidebar e header continuam
+         visíveis o tempo todo. Aberta via openChat() em chat.js,
+         chamado por qualquer elemento [data-open="<especialista_id>"]
+         (cards de especialista, itens de "Conversas recentes").
+
+         Layout em 2 colunas: painel de conversa + painel de contexto
+         lateral (Base consultada / Ações rápidas), com dados reais
+         vindos de ChatResponse.documentos_usados. -->
+    <section class="view" id="view-chat">
+      <div class="chat-view-layout fade-up">
+
+        <div class="chat-view-panel">
+          <div class="chat-header">
+            <div class="chat-avatar" id="chatIcon">📈</div>
+            <div class="chat-header-text">
+              <h4 id="chatTitle">Especialista</h4>
+              <span class="chat-ws" id="chatWsBadge">🏢 Workspace Geral</span>
+            </div>
+          </div>
+
+          <div class="chat-quickactions">
+            <button class="qa-btn" data-qa="Criar documento">📄 Criar documento</button>
+            <button class="qa-btn" data-qa="Responder e-mail">✉️ Responder e-mail</button>
+            <button class="qa-btn" data-qa="Analisar arquivo">📎 Analisar arquivo</button>
+            <button class="qa-btn" data-qa="Consultar procedimento">📋 Consultar procedimento</button>
+          </div>
+
+          <div class="chat-body" id="chatBody"></div>
+          <div class="quick-suggestions" id="quickSuggestions"></div>
+
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="Digite sua pergunta...">
+            <button class="chat-send" id="chatSendBtn" aria-label="Enviar">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <aside class="chat-context-panel">
+          <div class="ctx-title">Contexto da conversa</div>
+          <div class="ctx-card">
+            <strong>Base consultada</strong>
+            <div id="chatContextDocs">
+              <p class="ctx-empty">Nenhum documento consultado ainda nesta conversa.</p>
+            </div>
+          </div>
+          <div class="ctx-actions-label">Ações rápidas</div>
+          <button class="ctx-action-btn" id="ctxResumirBtn">Resumir documentos</button>
+          <button class="ctx-action-btn" id="ctxVerDocsBtn">Ver documentos usados</button>
+        </aside>
+
+      </div>
+    </section>
+
+    </div>
+   </div>
+  </main>
+</div>
+
+<!-- Marked (Markdown → HTML) + DOMPurify (sanitização) — usados só
+     nas respostas do especialista no chat, pra formatar títulos,
+     listas e negrito de verdade em vez de texto corrido com
+     asteriscos literais. Ver renderMarkdown em js/chat.js. Carregam
+     antes dos scripts do app de propósito. -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
+<!-- JavaScript -->
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/workspace.js"></script>
+<script src="js/especialistas.js"></script>
+<script src="js/biblioteca.js"></script>
+<script src="js/conversas.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

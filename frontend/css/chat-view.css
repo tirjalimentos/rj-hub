@@ -1,0 +1,251 @@
+/* ================================================================
+   RJ HUB — chat-view.css
+   Parte B: chat como view integrada (não modal) + painel de contexto
+   lateral + "Conversas recentes" na sidebar.
+
+   .chat-header, .chat-body, .msg, .qa-btn, .quick-suggestions,
+   .chat-input-row continuam vindo do style.css original — aqui só o
+   que a Parte B acrescenta: o layout em 2 colunas e os elementos
+   novos (painel de contexto, sidebar recente, nova conversa).
+   ================================================================ */
+
+.chat-view-layout{
+  display:grid;
+  grid-template-columns:1fr 260px;
+  gap:16px;
+  align-items:start;
+}
+
+.chat-view-panel{
+  display:flex;
+  flex-direction:column;
+  height:min(78vh, 760px);
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-md);
+  overflow:hidden;
+}
+
+.chat-context-panel{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  height:min(78vh, 760px);
+  overflow-y:auto;
+}
+
+.ctx-title{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  color:var(--ink-muted, #77736f);
+  margin-bottom:12px;
+}
+
+.ctx-card{
+  background:var(--bg, #f6f5f3);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:16px;
+}
+
+.ctx-card strong{
+  display:block;
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.ctx-empty, .ctx-count{
+  font-size:12px;
+  color:var(--ink-muted, #77736f);
+  margin:0;
+}
+
+.ctx-doc-list{
+  margin:8px 0 0;
+  padding-left:16px;
+  font-size:12px;
+  color:var(--ink, #202124);
+}
+
+.ctx-doc-list li{ margin-bottom:4px; }
+
+.ctx-actions-label{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  color:var(--ink-muted, #77736f);
+  margin-bottom:8px;
+}
+
+.ctx-action-btn{
+  display:block;
+  width:100%;
+  text-align:left;
+  border:1px solid var(--border);
+  background:var(--white);
+  border-radius:9px;
+  padding:9px 10px;
+  font-size:12px;
+  margin-bottom:8px;
+  cursor:pointer;
+}
+
+.ctx-action-btn:hover{ background:var(--bg, #f6f5f3); }
+
+/* -------- Sidebar: Nova conversa + Conversas recentes -------- */
+
+.sb-new-chat{
+  width:100%;
+  border:1px solid var(--sidebar-border);
+  background:var(--sidebar-chip);
+  color:#fff;
+  border-radius:10px;
+  padding:11px 13px;
+  text-align:left;
+  font-weight:650;
+  font-size:13px;
+  cursor:pointer;
+  margin:4px 0 16px;
+}
+
+.sb-new-chat:hover{ background:#2d2d2e; }
+
+.sb-recent{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--sidebar-border);
+  flex:1;
+  overflow-y:auto;
+}
+
+.sb-recent-label{
+  font-size:10px;
+  color:var(--sidebar-muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  padding:0 4px 8px;
+}
+
+.sb-recent-list{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.sb-recent-item{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:none;
+  border:none;
+  color:#aaa7a3;
+  font-size:12px;
+  padding:9px 9px;
+  border-radius:8px;
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.sb-recent-item:hover{ background:var(--sidebar-item-hover); color:#eee; }
+
+.sb-recent-empty{
+  font-size:12px;
+  color:var(--sidebar-muted);
+  padding:6px 9px;
+}
+
+@media (max-width:900px){
+  .chat-view-layout{ grid-template-columns:1fr; }
+  .chat-context-panel{ height:auto; max-height:320px; }
+}
+
+@media (max-width:640px){
+  .chat-view-panel{
+    height:calc(100vh - 220px);
+    border-radius:var(--r-md);
+  }
+}
+
+/* -------- Markdown dentro das mensagens do especialista --------
+   Só se aplica em .msg.bot (nunca .msg.user, que continua texto
+   puro escapado — ver renderMarkdown em chat.js). Reaproveita as
+   mesmas variáveis já usadas no resto deste arquivo, pra combinar
+   com o visual existente sem introduzir cor nova. */
+
+.msg.bot .bubble h1,
+.msg.bot .bubble h2,
+.msg.bot .bubble h3{
+  margin:14px 0 6px;
+  font-weight:700;
+  line-height:1.3;
+}
+
+.msg.bot .bubble h1:first-child,
+.msg.bot .bubble h2:first-child,
+.msg.bot .bubble h3:first-child{ margin-top:0; }
+
+.msg.bot .bubble h1{ font-size:16px; }
+.msg.bot .bubble h2{ font-size:15px; }
+.msg.bot .bubble h3{ font-size:14px; }
+
+.msg.bot .bubble p{ margin:0 0 10px; }
+.msg.bot .bubble p:last-child{ margin-bottom:0; }
+
+.msg.bot .bubble ul,
+.msg.bot .bubble ol{
+  margin:0 0 10px;
+  padding-left:20px;
+}
+.msg.bot .bubble ul:last-child,
+.msg.bot .bubble ol:last-child{ margin-bottom:0; }
+
+.msg.bot .bubble li{ margin-bottom:4px; }
+.msg.bot .bubble li:last-child{ margin-bottom:0; }
+
+.msg.bot .bubble strong{ font-weight:700; }
+
+.msg.bot .bubble code{
+  background:var(--bg, #f6f5f3);
+  border-radius:4px;
+  padding:1px 5px;
+  font-size:12px;
+  font-family:'SFMono-Regular', Consolas, monospace;
+}
+
+.msg.bot .bubble pre{
+  background:var(--bg, #f6f5f3);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  overflow-x:auto;
+  margin:0 0 10px;
+}
+.msg.bot .bubble pre:last-child{ margin-bottom:0; }
+.msg.bot .bubble pre code{
+  background:none;
+  padding:0;
+}
+
+.msg.bot .bubble blockquote{
+  border-left:3px solid var(--border);
+  margin:0 0 10px;
+  padding-left:10px;
+  color:var(--ink-muted, #77736f);
+}
+
+.msg.bot .bubble a{
+  color:var(--wine, #AB0F15);
+  text-decoration:underline;
+}
+
+.msg.bot .bubble hr{
+  border:none;
+  border-top:1px solid var(--border);
+  margin:12px 0;
+}
