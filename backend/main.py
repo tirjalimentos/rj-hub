@@ -25,8 +25,22 @@ from api.routes.especialistas import router as especialistas_router
 from api.routes.workspaces import router as workspaces_router
 from api.routes.admin import router as admin_router
 from core.config import APP_NAME, APP_VERSION, CORS_ORIGINS, SESSION_SECRET_KEY
+from db.database import Base, engine
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
+
+# Cria as tabelas que ainda não existem no banco, toda vez que o app
+# sobe. create_all() só cria o que falta — nunca altera nem apaga
+# tabela já existente, então é seguro rodar sempre (inclusive na sua
+# máquina local, onde as tabelas já existem: aqui ele não faz nada).
+# Isso é essencial na Render: no plano Free o disco é temporário, e o
+# banco começa zerado a cada subida do serviço — sem isso, a primeira
+# chamada que tocasse qualquer tabela quebrava com "no such table".
+# Funciona porque, a essa altura do arquivo, todos os routers acima já
+# foram importados — e cada um deles, através dos services, já
+# importou db/models_db.py, o que registra todas as tabelas no Base
+# antes desta linha rodar.
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
