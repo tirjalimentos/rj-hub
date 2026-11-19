@@ -143,7 +143,7 @@ principal — é o que está descrito no resto deste documento.
 
 ```
 rj-hub/
-├── CLAUDE.md                        (contexto original, mais curto)
+├── CLAUDE.md                        (resumo das regras e do estado atual; este arquivo é o detalhamento)
 ├── CONTEXTO_PROJETO.md              (este arquivo)
 ├── README.md
 ├── .gitignore
@@ -170,7 +170,6 @@ rj-hub/
 │
 └── backend/
     ├── main.py                      cria o FastAPI app, CORS, SessionMiddleware, registra as rotas, cria as tabelas que faltam (`create_all`), garante o admin inicial (`INITIAL_ADMIN_EMAIL`) e serve o frontend (`StaticFiles` em "/", sempre por último) — ver seção 5.6
-    ├── promover_admin.py            script utilitário: promove um e-mail a Super-Admin (insere na tabela `administradores`) sem precisar editar o seed — ver seção 5.3
     ├── scripts/
     │   └── migrar_schema_v2.py      script pontual: atualiza o schema de `conversas`/`documentos_conhecimento` sem apagar dado existente — ver seção 5.5. Já rodado uma vez neste projeto; só roda de novo se `db/models_db.py` mudar de formato outra vez.
     ├── requirements.txt             fastapi, uvicorn[standard], pydantic, sqlalchemy, anthropic, authlib, pyjwt, itsdangerous, httpx, python-dotenv, pdfplumber, python-docx, python-multipart
@@ -527,7 +526,7 @@ visual do resto do app — `hero`/`card`/`toolbar`):
 Super-Admin (tabela `administradores`) e pertencer a um Grupo (tabela
 `usuario_grupos`, o que libera especialista pra conversar) são **eixos
 separados de propósito** desde o início do RBAC. Um e-mail promovido a
-admin via `promover_admin.py` ou pela aba Administradores **não** entra
+admin via `INITIAL_ADMIN_EMAIL` ou pela aba Administradores **não** entra
 automaticamente em nenhum grupo — se aparecer com "Especialistas: 0" ou
 a Home vazia logado como admin, o mais provável é que esse e-mail nunca
 foi adicionado a um grupo pela aba Usuários (não é bug, é o design).
@@ -561,22 +560,21 @@ deve usar `ADMIN_ESPECIALISTAS_TODOS`, nunca `SPECIALISTS`.**
 que um especialista é criado ou excluído.
 
 ### Promover um e-mail a Super-Admin
-Além do seed inicial (abaixo), existe `backend/promover_admin.py` —
-script standalone que insere um e-mail na tabela `administradores` sem
-precisar mexer no `seed.py` nem recriar o banco:
-```bash
-python promover_admin.py seu.email@rjalimentos.com.br
-```
-Idempotente (roda `Base.metadata.create_all()` antes, e avisa sem
-duplicar se o e-mail já for admin). É o caminho recomendado pra promover
-alguém depois que o banco já está em uso — editar o seed só faz sentido
-pra popular do zero. (A aba Administradores do próprio painel faz a
-mesma coisa, sem precisar de terminal — ver acima.)
+Dois caminhos, nenhum exige mexer no `seed.py` nem recriar o banco:
+- **Aba Administradores do painel** (ver acima) — caminho recomendado
+  depois que o banco já está em uso, sem precisar de terminal.
+- **`INITIAL_ADMIN_EMAIL` no `.env`** — no startup, `main.py` garante esse
+  e-mail na tabela `administradores` (idempotente). Resolve o primeiro
+  admin de um banco novo (ver seção 5.6).
+
+(Versões anteriores do projeto tinham um script `backend/promover_admin.py`
+para isso; ele não existe neste repositório.) Editar o seed só faz sentido
+pra popular do zero.
 
 ### Estado atual do seed
 Grupo `geral` libera o `especialista-rj`. O seed cadastra um Super-Admin
 inicial de exemplo — qualquer e-mail adicional (ou substituição) deve ser
-feito via `promover_admin.py` ou a aba Administradores (acima), não
+feito via a aba Administradores ou `INITIAL_ADMIN_EMAIL` (acima), não
 editando o seed depois que o banco já está em uso.
 
 ---
@@ -689,7 +687,7 @@ inventar um valor (antes eram fixos: "Analista de Processos"/"TI").
 ### Migração de schema necessária
 As mudanças em `ConversaDB` e `DocumentoConhecimentoDB` (acima) alteram
 tabelas que já existiam — `Base.metadata.create_all()` (usado no seed e
-em `promover_admin.py`) **não** cobre isso, só cria tabela que ainda não
+no startup do `main.py`) **não** cobre isso, só cria tabela que ainda não
 existe. Por isso existe `backend/scripts/migrar_schema_v2.py`: recria só
 `conversas` (sempre esteve vazia, nada se perde) e adiciona `criado_em`
 em `documentos_conhecimento` via `ALTER TABLE` (sem apagar nada).
@@ -733,7 +731,7 @@ idempotente, seguro rodar de novo quantas vezes precisar.
 
 ### Teste na Render (plano Free) — validado, serviu de aprendizado
 - Repositório GitHub privado `tirjalimentos/rj-hub` (pasta local
-  `D:\RJ HUB\rjhub-v2\`; o `.gitignore` já exclui `.env`, `*.db`, `venv/`).
+  `C:\Users\plosantos\Documents\RJ_HUB`; o `.gitignore` já exclui `.env`, `*.db`, `venv/`).
 - Configuração: Root Directory `backend`; Build `pip install -r
   requirements.txt`; Start `uvicorn main:app --host 0.0.0.0 --port $PORT`
   (a porta vem da variável `$PORT`, não é fixa). URL de teste:
@@ -975,7 +973,7 @@ seção 5.3. Confirmado pelo usuário: funcionando.
   CONCLUÍDO, com interface visual própria** (`frontend/js/admin.js`), 5
   abas: Grupos, Usuários, Base de Conhecimento, Especialistas,
   Administradores (ver seção 5.3). Promoção de novos admins via
-  `backend/promover_admin.py` ou pela própria aba Administradores.
+  `INITIAL_ADMIN_EMAIL` ou pela própria aba Administradores.
   Excluir especialista (bloqueia por dependência) e exportar documentos
   em `.zip` (backup) — **adicionados e testados nesta sessão**.
 - **Conversas, Dashboard e Biblioteca com dado real — CONCLUÍDO** (ver
@@ -1079,11 +1077,10 @@ mesmos padrões já estabelecidos nas seções 3, 5, 5.1, 5.2, 5.3, 5.4 e 5.5.
   de criar padrão visual novo. `style.css` tem tudo comentado por bloco.
 - Valide sintaxe (JS: `node --check arquivo.js`; Python:
   `python3 -m py_compile arquivo.py`) antes de entregar qualquer arquivo.
-- Entregue mudanças arquivo por arquivo (a pessoa não está usando Claude
-  Code, está copiando os arquivos manualmente para a pasta local em
-  `D:\RJ HUB\rjhub-v2\`) — não assuma que ela vai rodar comandos de
-  automação além dos que já usa (`git add/commit/push`, `uvicorn`,
-  `python -m db.seed`). O ambiente dela é Windows com CMD.
+- O projeto agora é editado diretamente pelo Claude Code no repositório
+  `C:\Users\plosantos\Documents\RJ_HUB` (antes os arquivos eram copiados
+  manualmente para `D:\RJ HUB\rjhub-v2\`). Commit/push só quando a pessoa
+  pedir. O ambiente é Windows (CMD/PowerShell).
 - Ao pedir que a pessoa rode o projeto local, lembre: **um único `uvicorn`
   em `localhost:8000`**, sem servidor separado de frontend (seção 5.6).
 - Ao adicionar CSS, use `var(--surface)` para fundos de card/painel — nunca
