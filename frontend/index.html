@@ -11,6 +11,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+<!-- Aplica o tema salvo ANTES do CSS carregar, pra não piscar o tema
+     errado por uma fração de segundo ao abrir a página. A lógica
+     completa (clique nos botões, reagir à mudança do SO) mora em
+     js/ui.js — isto aqui é só o "primeiro pintor", precisa ser
+     síncrono e vir antes dos links de CSS abaixo. -->
+<script>
+(function(){
+  var pref = localStorage.getItem('rjhub_tema') || 'padrao';
+  var escuro = pref === 'escuro' || (pref === 'sistema' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (escuro) document.documentElement.setAttribute('data-theme', 'escuro');
+})();
+</script>
+
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/chat-view.css">
 
@@ -230,7 +243,7 @@
           <h4>🎨 Aparência</h4>
           <div style="margin-bottom:6px;font-size:13px;color:var(--ink-muted);">Tema</div>
           <div class="theme-opts">
-            <div class="theme-opt selected" data-theme="claro">Claro</div>
+            <div class="theme-opt" data-theme="padrao">Padrão</div>
             <div class="theme-opt" data-theme="escuro">Escuro</div>
             <div class="theme-opt" data-theme="sistema">Sistema</div>
           </div>

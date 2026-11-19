@@ -24,8 +24,9 @@ from api.routes.dashboard import router as dashboard_router
 from api.routes.especialistas import router as especialistas_router
 from api.routes.workspaces import router as workspaces_router
 from api.routes.admin import router as admin_router
-from core.config import APP_NAME, APP_VERSION, CORS_ORIGINS, SESSION_SECRET_KEY
-from db.database import Base, engine
+from core.config import APP_NAME, APP_VERSION, CORS_ORIGINS, INITIAL_ADMIN_EMAIL, SESSION_SECRET_KEY
+from db.database import Base, SessionLocal, engine
+from db.models_db import AdministradorDB
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
@@ -41,6 +42,20 @@ app = FastAPI(title=APP_NAME, version=APP_VERSION)
 # importou db/models_db.py, o que registra todas as tabelas no Base
 # antes desta linha rodar.
 Base.metadata.create_all(bind=engine)
+
+# Garante que INITIAL_ADMIN_EMAIL (se configurado) sempre existe como
+# Super-Admin — resolve o "ovo e galinha" de precisar já ser admin pra
+# promover alguém pelo próprio painel. Idempotente (só insere se ainda
+# não existir), então é seguro rodar em toda subida do app, inclusive
+# quando o e-mail já está la (não faz nada nesse caso).
+if INITIAL_ADMIN_EMAIL:
+    db = SessionLocal()
+    try:
+        if db.get(AdministradorDB, INITIAL_ADMIN_EMAIL) is None:
+            db.add(AdministradorDB(usuario_email=INITIAL_ADMIN_EMAIL))
+            db.commit()
+    finally:
+        db.close()
 
 app.add_middleware(
     CORSMiddleware,

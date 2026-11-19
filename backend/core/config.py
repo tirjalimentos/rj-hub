@@ -60,6 +60,17 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 # durante os primeiros testes do piloto.
 GOOGLE_ALLOWED_DOMAIN = os.environ.get("GOOGLE_ALLOWED_DOMAIN")
 
+# E-mail que o app garante como Super-Admin toda vez que sobe (ver
+# main.py) — resolve o "ovo e galinha" de precisar já ser admin pra
+# promover alguém a admin pelo próprio painel. Especialmente
+# importante em ambientes com disco temporário (ex: plano Free da
+# Render), onde o banco pode nascer vazio a cada subida do serviço:
+# sem isso, ninguém conseguiria acessar o painel de Super-Admin depois
+# de um restart. Deixe em branco pra desativar esse comportamento
+# (por exemplo, depois que o disco for persistente e os admins já
+# estiverem garantidos no banco).
+INITIAL_ADMIN_EMAIL = os.environ.get("INITIAL_ADMIN_EMAIL")
+
 # Chave usada pra assinar o JWT próprio do RJ HUB (emitido depois do
 # login com Google). TROQUE o valor padrão via variável de ambiente
 # antes de expor a API fora da sua máquina.

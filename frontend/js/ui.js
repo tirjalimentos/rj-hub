@@ -110,9 +110,74 @@ function initTopSearch(){
   });
 }
 
+// ---------------- Tema (Padrão / Escuro / Sistema) ----------------
+// Guardado no localStorage do navegador (preferência é por
+// dispositivo, não por conta — não faz parte do perfil do usuário no
+// backend). "sistema" não tem CSS próprio: a cada carregamento (e a
+// cada vez que o SO muda de tema, enquanto "sistema" estiver ativo)
+// o JS decide, na hora, se aplica o tema escuro ou remove o atributo
+// (= tema Padrão). Padrão e Escuro escolhidos manualmente IGNORAM o
+// SO completamente, até a pessoa escolher "Sistema" de novo.
+const TEMA_STORAGE_KEY = 'rjhub_tema';
+const _mediaEscuro = window.matchMedia('(prefers-color-scheme: dark)');
+
+function _prefereEscuroNoSistema(){
+  return _mediaEscuro.matches;
+}
+
+// Aplica de fato no <html> — "escuro" vira o atributo data-theme;
+// "padrao" remove o atributo (CSS cai nos valores padrão do :root).
+function _aplicarTemaNoHtml(temaEfetivo){
+  if (temaEfetivo === 'escuro') {
+    document.documentElement.setAttribute('data-theme', 'escuro');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+// Resolve a preferência guardada ("padrao"/"escuro"/"sistema") pro
+// tema efetivo de verdade ("padrao" ou "escuro"), aplica no <html>, e
+// marca o botão certo como .selected na tela de Configurações (se ela
+// já estiver no DOM — os botões existem desde o carregamento inicial,
+// então sempre estarão).
+function aplicarTema(preferencia){
+  const efetivo = preferencia === 'sistema'
+    ? (_prefereEscuroNoSistema() ? 'escuro' : 'padrao')
+    : preferencia;
+
+  _aplicarTemaNoHtml(efetivo);
+
+  document.querySelectorAll('.theme-opt').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.theme === preferencia);
+  });
+}
+
+function initThemeSwitcher(){
+  const preferenciaSalva = localStorage.getItem(TEMA_STORAGE_KEY) || 'padrao';
+  aplicarTema(preferenciaSalva);
+
+  document.querySelectorAll('.theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const escolha = btn.dataset.theme;
+      localStorage.setItem(TEMA_STORAGE_KEY, escolha);
+      aplicarTema(escolha);
+    });
+  });
+
+  // Só importa reagir à mudança do SO enquanto "sistema" estiver
+  // escolhido — se a pessoa já escolheu Padrão/Escuro manualmente,
+  // o SO mudar de tema no meio da sessão não deve alterar nada aqui.
+  _mediaEscuro.addEventListener('change', () => {
+    if (localStorage.getItem(TEMA_STORAGE_KEY) === 'sistema') {
+      aplicarTema('sistema');
+    }
+  });
+}
+
 // ---------------- Ponto de entrada do módulo (chamado por app.js) ----------------
 function initUI(){
   initSidebarNavigation();
   initHomeQuickLinks();
   initTopSearch();
+  initThemeSwitcher();
 }

@@ -4,6 +4,9 @@
 > uma IA (Claude ou outra), para que ela entenda o projeto inteiro sem
 > precisar reexplicar nada do zero. Leia tudo antes de sugerir qualquer
 > mudança, e trate as regras da seção 3 como inegociáveis.
+>
+> Última atualização: novembro/2026 (inclui deploy de teste na Render, decisão
+> pela Locaweb, Markdown no chat e tema Padrão/Escuro/Sistema).
 
 ---
 
@@ -146,33 +149,35 @@ rj-hub/
 ├── .gitignore
 │
 ├── frontend/
-│   ├── index.html                   (casca completa: sidebar fixa + topbar, views de Início, Especialistas, Biblioteca, Conversas, Dashboard, Configurações, Super-Admin, e a view de chat integrada — não modal)
+│   ├── index.html                   (casca completa: sidebar fixa + topbar, views de Início, Especialistas, Biblioteca, Conversas, Dashboard, Configurações, Super-Admin, e a view de chat integrada — não modal). Carrega `marked` + `DOMPurify` por CDN (Markdown nas respostas do chat) e tem um script inline no `<head>` que aplica o tema salvo antes do CSS (evita "piscar")
 │   ├── css/
-│   │   ├── style.css                identidade visual vinho `#AB0F15` / dourado `#E7C311` / sidebar escura `#171718`, todos os componentes (hero, card, grid, toolbar, kpi-grid, painel admin)
-│   │   └── chat-view.css            layout de 2 colunas da view de chat (painel de conversa + painel de contexto) e "Nova conversa"/"Conversas recentes" da sidebar
+│   │   ├── style.css                identidade visual vinho `#AB0F15` / dourado `#E7C311` / sidebar escura `#171718`, todos os componentes (hero, card, grid, toolbar, kpi-grid, painel admin). Temas: `:root` = Padrão, `[data-theme="escuro"]` = Escuro (seção 5.7). `--surface` = fundo de card/painel; `--white` = só texto/ícone branco sobre vinho/dourado
+│   │   └── chat-view.css            layout de 2 colunas da view de chat (painel de conversa + painel de contexto) e "Nova conversa"/"Conversas recentes" da sidebar, mais os estilos do Markdown dentro das bolhas do especialista (`.msg.bot .bubble ...`)
 │   └── js/
 │       ├── data.js                  dados + fallback mock de tudo (ver seção 5)
-│       ├── ui.js                    sidebar, navegação entre views, breadcrumb da topbar, menu mobile, botão de busca
+│       ├── ui.js                    sidebar, navegação entre views, breadcrumb da topbar, menu mobile, botão de busca, tema (Padrão/Escuro/Sistema — `initThemeSwitcher`, seção 5.7)
 │       ├── workspace.js             seletor de workspace (workspace-pill da topbar), saudação, card de especialista, grid da Home
 │       ├── especialistas.js         listagem completa, busca/filtro, toggle de favoritos (estrela direto no card)
 │       ├── biblioteca.js            renderização da lista de documentos
 │       ├── conversas.js             histórico de conversas, "Conversas recentes" da sidebar, card "Continue de onde parou" da Home
 │       ├── dashboard.js             indicadores (KPIs) e gráfico de barras verticais
-│       ├── chat.js                  view de chat integrada (não modal) — conectado à IA real (ver seção 5.2), mensagens com avatar
+│       ├── chat.js                  view de chat integrada (não modal) — conectado à IA real (ver seção 5.2), mensagens com avatar, respostas do especialista renderizadas como Markdown (`renderMarkdown`)
 │       ├── config.js                tema, idioma, workspace padrão
-│       ├── admin.js                 painel de Super-Admin: Grupos, Usuários, Base de Conhecimento (ver seção 5.3)
+│       ├── admin.js                 painel de Super-Admin: Grupos, Usuários, Base de Conhecimento, Especialistas, Administradores — 5 abas (ver seção 5.3). verificarAdmin() roda cedo no init(); inicializarPainelAdmin() monta as abas depois.
 │       ├── auth.js                  login Google, guarda/lê o token JWT, getToken(), estaLogado()
-│       ├── api.js                   TODAS as chamadas HTTP ao backend, centralizadas aqui (inclui as funções admin*)
+│       ├── api.js                   TODAS as chamadas HTTP ao backend, centralizadas aqui (inclui as funções admin*). `API = ""` (caminho relativo, mesma origem — seção 5.6)
 │       └── app.js                   só inicialização: carregarDadosIniciais() + init() orquestrando os outros módulos, incluindo initAdminPanel()
 │
 └── backend/
-    ├── main.py                      cria o FastAPI app, CORS, SessionMiddleware, registra as rotas — nada de lógica
+    ├── main.py                      cria o FastAPI app, CORS, SessionMiddleware, registra as rotas, cria as tabelas que faltam (`create_all`), garante o admin inicial (`INITIAL_ADMIN_EMAIL`) e serve o frontend (`StaticFiles` em "/", sempre por último) — ver seção 5.6
     ├── promover_admin.py            script utilitário: promove um e-mail a Super-Admin (insere na tabela `administradores`) sem precisar editar o seed — ver seção 5.3
+    ├── scripts/
+    │   └── migrar_schema_v2.py      script pontual: atualiza o schema de `conversas`/`documentos_conhecimento` sem apagar dado existente — ver seção 5.5. Já rodado uma vez neste projeto; só roda de novo se `db/models_db.py` mudar de formato outra vez.
     ├── requirements.txt             fastapi, uvicorn[standard], pydantic, sqlalchemy, anthropic, authlib, pyjwt, itsdangerous, httpx, python-dotenv, pdfplumber, python-docx, python-multipart
     ├── rjhub.db                     arquivo do banco SQLite (criado pelo db/seed.py, não versionar)
     ├── .env                         chaves e segredos (não versionar) — ver seção 6
     ├── core/
-    │   └── config.py                nome do app, versão, CORS_ORIGINS, leitura do .env (caminho absoluto), chaves de API/JWT/OAuth
+    │   └── config.py                nome do app, versão, CORS_ORIGINS, leitura do .env (caminho absoluto), chaves de API/JWT/OAuth, `FRONTEND_URL`, `INITIAL_ADMIN_EMAIL`
     ├── db/                          camada de acesso ao banco de dados (SQLite via SQLAlchemy)
     │   ├── database.py              engine, SessionLocal, Base, get_db()
     │   ├── models_db.py             modelos de TABELA (SQLAlchemy) — inclui RBAC/admin (GrupoDB, GrupoEspecialistaDB, UsuarioGrupoDB, AdministradorDB)
@@ -345,7 +350,7 @@ linha pro schema Pydantic correspondente, e sempre fecha a sessão num
 ```
 POST /chat
 Body: { "especialista_id": "especialista-rj", "mensagens": [{"role": "user"|"assistant", "content": "..."}] }
-Resposta: { "resposta": "texto gerado pela IA" }
+Resposta: { "resposta": "texto gerado pela IA (em Markdown)", "documentos_usados": [{ "id": 1, "titulo": "..." }] }
 ```
 Exige login (`get_current_user`) e checa RBAC (`usuario_tem_acesso`) antes
 de gerar qualquer resposta — ver seção 5.3.
@@ -369,6 +374,17 @@ de gerar qualquer resposta — ver seção 5.3.
   Erro 529 (Anthropic sobrecarregada) e falha de conexão são tratados
   especificamente, devolvendo 503 com mensagem clara em vez de um erro
   genérico confuso.
+
+- **Formatação em Markdown:** o system prompt (`_montar_system_prompt`)
+  instrui o modelo a usar `###` para seções, listas, `**negrito**` e
+  blocos de código quando o conteúdo tiver passos/itens/seções — e a NÃO
+  forçar estrutura em respostas curtas ou conversacionais.
+- **Concorrência:** `post_chat` em `api/routes/chat.py` é `def` comum (não
+  `async def`), então o FastAPI o executa em threadpool — várias pessoas
+  conversam ao mesmo tempo sem uma travar esperando a Anthropic da outra
+  (limite padrão ≈ 40 simultâneos, suficiente para a meta de 30). **Não
+  transformar em `async def` sem trocar o client da Anthropic por
+  assíncrono**, senão passa a bloquear.
 
 ### Base de Conhecimento (`conhecimento_service.py`)
 
@@ -395,6 +411,12 @@ de gerar qualquer resposta — ver seção 5.3.
   do usuário) — `addMessage()` monta avatar + bolha via `innerHTML`, com
   `escapeHtml()` próprio pra manter a mesma segurança que `textContent`
   já dava antes.
+- **Markdown nas respostas do especialista:** `renderMarkdown()` converte
+  com `marked` e sanitiza com `DOMPurify` antes de inserir (HTML gerado por
+  IA nunca vai direto no `innerHTML`). Só vale para mensagens do bot — as
+  do usuário continuam sempre texto puro via `escapeHtml()`. Se os scripts
+  do CDN não carregarem, cai para texto escapado (sem formatação, mas sem
+  quebrar o chat).
 - `currentMessages` mantém o histórico da conversa atual em memória, pra
   dar contexto ao modelo entre mensagens.
 - `sendReply()` é `async`: chama `enviarMensagemChat()` (em `api.js`), que
@@ -445,26 +467,38 @@ E-mail sem grupo = sem acesso a nenhum especialista.
   sistema.
 
 ### Painel de Super-Admin (`/admin/...`)
-Gerencia grupos, atribuições de usuário e documentos **pelo próprio
-portal**, sem depender de editar `seed.py` e recriar o banco a cada
-mudança.
+Gerencia especialistas, grupos, atribuições de usuário, administradores e
+documentos **pelo próprio portal**, sem depender de editar `seed.py` e
+recriar o banco a cada mudança.
 - Toda rota protegida por `get_current_admin` (`api/deps_admin.py`,
   composto sobre `get_current_user`).
-- `GET/POST /admin/grupos`, `DELETE /admin/grupos/{id}`,
-  `PUT /admin/grupos/{id}/especialistas`, `GET /admin/usuarios`,
-  `PUT /admin/usuarios/{email}/grupos`,
+- `GET/POST /admin/especialistas`, `GET/POST /admin/grupos`,
+  `DELETE /admin/grupos/{id}`, `PUT /admin/grupos/{id}/especialistas`,
+  `GET /admin/usuarios`, `PUT /admin/usuarios/{email}/grupos`,
+  `GET/POST /admin/administradores`, `DELETE /admin/administradores/{email}`
+  (bloqueado se `email` for o do próprio usuário logado — sem essa
+  checagem um Super-Admin sozinho poderia se trancar fora do painel),
   `GET /admin/especialistas/{id}/documentos`,
   `POST /admin/especialistas/{id}/documentos/upload` (aceita PDF/.docx,
-  extrai texto automaticamente), `DELETE /admin/documentos/{id}`.
+  extrai texto automaticamente), `DELETE /admin/documentos/{id}`,
+  `DELETE /admin/especialistas/{id}` (bloqueia se houver dependência —
+  ver "Excluir especialista" abaixo),
+  `GET /admin/especialistas/{id}/documentos/exportar` (baixa `.zip` de
+  backup, ver abaixo).
 
-**Interface própria — CONCLUÍDA** (`frontend/js/admin.js`). Item
-"Super-Admin" na sidebar, visível só se `/admin/grupos` responder com
-sucesso no carregamento — não existe endpoint dedicado "sou admin?"; em
-vez de criar um só pra isso, `initAdminPanel()` reaproveita a própria
-tentativa de leitura pra decidir se mostra o item (se vier `null` = 403
-ou API offline, o item continua com `display:none`, que já é o padrão no
-HTML). 3 abas, mesmo padrão visual do resto do app (`hero`/`card`/
-`toolbar`):
+**Interface própria — CONCLUÍDA** (`frontend/js/admin.js`). Itens
+"Super-Admin" e "Biblioteca" na sidebar, visíveis só se `/admin/grupos`
+responder com sucesso no carregamento — não existe endpoint dedicado "sou
+admin?"; em vez de criar um só pra isso, `verificarAdmin()` (chamada BEM
+CEDO no `init()`, antes de `carregarDadosIniciais()`) reaproveita a
+própria tentativa de leitura pra decidir. Se vier `null` (403 ou API
+offline), `window.IS_ADMIN` fica `false` e os itens continuam com
+`display:none`, que já é o padrão no HTML. Chamar isso cedo importa:
+`carregarDadosIniciais()` só busca a Biblioteca se `window.IS_ADMIN` for
+`true` — evita uma chamada 403 desperdiçada pra quem não é admin.
+
+Depois disso, `inicializarPainelAdmin()` monta as 5 abas (mesmo padrão
+visual do resto do app — `hero`/`card`/`toolbar`):
 - **Grupos** — criar (id + nome), excluir, e por grupo um checklist
   (`admin-checklist`) pra escolher quais especialistas ele libera
   (`PUT /admin/grupos/{id}/especialistas`).
@@ -476,11 +510,55 @@ HTML). 3 abas, mesmo padrão visual do resto do app (`hero`/`card`/
 - **Base de Conhecimento** — escolhe o especialista num `<select>`, lista
   os documentos dele, sobe um PDF/.docx novo (extração automática via
   `extrair_texto`, ver seção 5.2) ou exclui um existente.
+- **Especialistas** — cria especialista novo (id, ícone, nome,
+  descrição). **Não vincula a nenhum grupo automaticamente** — criar aqui
+  não dá acesso a ninguém, isso continua sendo feito na aba Grupos, de
+  propósito (evita liberar acesso sem querer). Cada card tem dois botões:
+  **"Exportar documentos"** (baixa um `.zip` com um `.txt` por documento —
+  só leitura, não apaga nada, serve como backup manual) e **"Excluir"**
+  (bloqueia — não exclui em cascata — se o especialista tiver qualquer
+  dependência viva: documentos na Base de Conhecimento, vínculo com
+  grupo, presença em workspace, ou conversas registradas; a mensagem de
+  erro diz exatamente qual dependência está bloqueando).
+- **Administradores** — lista quem é Super-Admin, promove um
+  e-mail novo, remove (exceto a si mesmo — ver acima).
+
+**Importante, e é a causa mais provável de confusão ao testar:** ser
+Super-Admin (tabela `administradores`) e pertencer a um Grupo (tabela
+`usuario_grupos`, o que libera especialista pra conversar) são **eixos
+separados de propósito** desde o início do RBAC. Um e-mail promovido a
+admin via `promover_admin.py` ou pela aba Administradores **não** entra
+automaticamente em nenhum grupo — se aparecer com "Especialistas: 0" ou
+a Home vazia logado como admin, o mais provável é que esse e-mail nunca
+foi adicionado a um grupo pela aba Usuários (não é bug, é o design).
 
 Todas as chamadas de escrita usam `alert()` pra erro e simplesmente
 recarregam a lista em caso de sucesso — não há um sistema de toast/
 notificação ainda; se isso incomodar no uso do dia a dia, é uma melhoria
 futura de baixo risco.
+
+### Ponto de atenção: duas listas de especialistas no frontend, propositalmente diferentes
+`admin.js` mantém **duas variáveis globais** de especialistas, e usar a
+errada num lugar novo já causou um bug real (ver seção 7):
+- `SPECIALISTS` — populada por `buscarEspecialistas()` (`GET
+  /especialistas`), **filtrada por RBAC**: só traz o que o grupo do
+  usuário logado libera. Usada em Home, Dashboard, busca de
+  especialistas, chat — tudo que é experiência de usuário comum.
+- `ADMIN_ESPECIALISTAS_TODOS` — populada por `adminListarEspecialistas()`
+  (`GET /admin/especialistas`), **sem filtro nenhum**. Usada só dentro do
+  próprio painel de Admin: `renderAdminEspecialistas()`,
+  `populateAdminEspecialistaSelect()` (select da Base de Conhecimento) e
+  o checklist de vínculo da aba Grupos.
+
+**Por que a distinção existe:** um especialista recém-criado ainda não
+pertence a grupo nenhum — se o painel de Admin usasse `SPECIALISTS`
+(filtrada), o especialista novo nunca apareceria em lugar nenhum do
+próprio painel, incluindo o checklist de Grupos, que é justamente onde
+ele precisaria aparecer pra ser vinculado a um grupo pela primeira vez.
+**Qualquer tela nova do painel de Admin que precise listar especialistas
+deve usar `ADMIN_ESPECIALISTAS_TODOS`, nunca `SPECIALISTS`.**
+`recarregarEspecialistasGlobal()` recarrega as duas de uma vez, sempre
+que um especialista é criado ou excluído.
 
 ### Promover um e-mail a Super-Admin
 Além do seed inicial (abaixo), existe `backend/promover_admin.py` —
@@ -492,13 +570,14 @@ python promover_admin.py seu.email@rjalimentos.com.br
 Idempotente (roda `Base.metadata.create_all()` antes, e avisa sem
 duplicar se o e-mail já for admin). É o caminho recomendado pra promover
 alguém depois que o banco já está em uso — editar o seed só faz sentido
-pra popular do zero.
+pra popular do zero. (A aba Administradores do próprio painel faz a
+mesma coisa, sem precisar de terminal — ver acima.)
 
 ### Estado atual do seed
 Grupo `geral` libera o `especialista-rj`. O seed cadastra um Super-Admin
 inicial de exemplo — qualquer e-mail adicional (ou substituição) deve ser
-feito via `promover_admin.py` (acima), não editando o seed depois que o
-banco já está em uso.
+feito via `promover_admin.py` ou a aba Administradores (acima), não
+editando o seed depois que o banco já está em uso.
 
 ---
 
@@ -514,9 +593,216 @@ Login real com e-mail corporativo (`@rjalimentos.com.br`).
 - Frontend: `js/auth.js` guarda/lê o token (`getToken()`, `estaLogado()`).
   `api.js` tem `_authHeaders()`, que qualquer função que bate numa rota
   protegida deve incluir no `fetch`.
-- Hoje protegidas: `/chat`, `/especialistas`, `/workspaces`, `/admin/*`
-  (estas últimas exigem login **e** ser Super-Admin — ver seção 5.3).
-  Ainda públicas: `/biblioteca`, `/conversas`, `/dashboard`.
+- Hoje protegidas: `/chat`, `/especialistas`, `/workspaces`, `/conversas`,
+  `/dashboard` (login; escopo por permissão — seção 5.5), e `/biblioteca` +
+  `/admin/*` (login **e** Super-Admin — seção 5.3). Públicas: só `/health`,
+  `/auth/login`, `/auth/callback` e os arquivos estáticos do frontend.
+- **`FRONTEND_URL` (variável de ambiente):** para onde o backend redireciona
+  depois do login (`FRONTEND_URL/#token=...`). Como o backend agora serve o
+  frontend, ela deve ser a URL pública do próprio app (local:
+  `http://localhost:8000`; teste: `https://rj-hub-1.onrender.com`; produção:
+  o domínio final). O padrão no código (`http://127.0.0.1:8080`) é herança do
+  modelo antigo de 2 servidores e está ERRADO hoje — sempre definir. Se
+  faltar, o login "funciona" nos bastidores mas manda o navegador para um
+  endereço que não existe.
+- **Google Cloud Console → "URIs de redirecionamento autorizados":** um por
+  ambiente, no formato exato `<origem>/auth/callback` (ex:
+  `http://localhost:8000/auth/callback`, `https://rj-hub-1.onrender.com/auth/callback`).
+  Pode haver vários ao mesmo tempo. Para o Google, `localhost` e `127.0.0.1`
+  são endereços diferentes — acessar sempre pelo mesmo que foi cadastrado.
+  Erro `redirect_uri_mismatch` = o URI usado não está na lista (já aconteceu
+  tanto na Render quanto no local).
+- **Chaves JWT/Session:** pelo menos 32 bytes (gerar com
+  `python -c "import secrets; print(secrets.token_urlsafe(32))"`). O aviso
+  `InsecureKeyLengthWarning` nos logs indica chave curta. Chaves que já
+  apareceram em conversa de chat (como as usadas no teste da Render) devem
+  ser regeneradas, não reaproveitadas, na produção (regra 12).
+
+---
+
+## 5.5 Dado real: Conversas, Dashboard, Biblioteca e identidade do usuário
+
+Até esta rodada, Conversas/Dashboard/Biblioteca liam de tabelas
+**semeadas manualmente** (`ConversaDB`/`DashboardStatDB`/`DashboardBarDB`/
+`DocumentoDB` antigos) — nunca refletiam uso de verdade. Isso mudou:
+
+### Conversas — gravação real
+`ConversaDB` foi reformulada: 1 linha por par (usuário, especialista),
+não mais 1 por mensagem nem linhas semeadas. `services/conversas_
+service.py::registrar_interacao(email, especialista_id, pergunta)` é
+chamada por `api/routes/chat.py` a cada resposta **bem-sucedida** do
+motor de IA (upsert: cria se não existe, senão atualiza preview,
+`total_mensagens` e `atualizado_em`). Uma pergunta que deu erro 503/502
+não vira conversa — não distorce Dashboard/histórico com tentativas sem
+resposta de verdade.
+
+`GET /conversas` exige login e **sempre filtra pelo e-mail de quem
+pede** — conversa é dado pessoal, ninguém vê o histórico de outra
+pessoa (isso vale pra Admin também, diferente do Dashboard abaixo). O
+texto "há 18 minutos"/"Ontem" é calculado a partir de `atualizado_em`
+real (`_humanizar_quando()`), não mais texto fixo.
+
+### Dashboard — calculado, com escopo por permissão
+`services/dashboard_service.py` não lê mais tabela nenhuma semeada —
+calcula em cima de `conversas_service` (`contar_mensagens_por_
+especialista`, `contar_conversas_na_semana`) e contagens diretas
+(`EspecialistaDB`, `DocumentoConhecimentoDB`). `GET /dashboard/stats` e
+`/bars` exigem login e recebem `eh_administrador(usuario.email)`:
+- **Super-Admin** vê agregado de **todos** os usuários.
+- **Usuário comum** só vê o próprio uso (especialistas visíveis pra ele,
+  documentos dos especialistas que ele acessa, conversas dele).
+
+O gráfico de barras (`val`, 0-100) é normalizado pelo maior valor entre
+os especialistas do escopo — o frontend usa `val` direto como altura em
+%, então a normalização tem que acontecer no backend antes de responder.
+
+### Biblioteca — unificada com a Base de Conhecimento, só Admin
+Decisão tomada nesta rodada: a Biblioteca (`Documento`/`CategoriaDocumento`)
+passou a ler `DocumentoConhecimentoDB` — os **mesmos** documentos que
+alimentam o chat, não mais uma tabela desconectada (`DocumentoDB`/
+`CategoriaDocumentoDB` antigos continuam existindo no banco, só não são
+mais lidos). "Categoria" virou "especialista", com a contagem real de
+documentos dele. `DocumentoConhecimentoDB` ganhou a coluna `criado_em`
+(usada pro "Atualizado há X dias" real).
+
+`GET /biblioteca/categorias` e `/recentes` agora exigem `get_current_admin`
+(mesma proteção das rotas `/admin/*`) — o conteúdo pode ser sensível.
+Item "Biblioteca" escondido da sidebar por padrão (`display:none` no
+HTML), revelado por `verificarAdmin()` em `admin.js` só se o usuário for
+Super-Admin.
+
+### Identidade real do usuário logado
+Todo o "Pedro Almeida"/"PA" hardcoded que existia em `index.html`
+(sidebar, Configurações, saudação da Home) foi substituído por dado real
+de `GET /auth/me`. `aplicarUsuarioNaInterface(usuario)`
+(`workspace.js`), chamada bem cedo no `init()` de `app.js`, preenche:
+saudação da Home (`Bom dia/Boa tarde/Boa noite, {primeiro nome}`),
+rodapé da sidebar (avatar com iniciais + nome + e-mail), card de Perfil
+em Configurações. Também expõe `window.USUARIO_ATUAL` globalmente, que
+`chat.js::getUserInitials()` usa pro avatar das mensagens do usuário no
+chat (substituiu a constante fixa `USER_INITIALS = 'PA'`).
+
+`UsuarioAutenticado` só tem e-mail/nome/foto — os campos "Cargo" e
+"Departamento" no card de Perfil mostram "Não informado" em vez de
+inventar um valor (antes eram fixos: "Analista de Processos"/"TI").
+
+### Migração de schema necessária
+As mudanças em `ConversaDB` e `DocumentoConhecimentoDB` (acima) alteram
+tabelas que já existiam — `Base.metadata.create_all()` (usado no seed e
+em `promover_admin.py`) **não** cobre isso, só cria tabela que ainda não
+existe. Por isso existe `backend/scripts/migrar_schema_v2.py`: recria só
+`conversas` (sempre esteve vazia, nada se perde) e adiciona `criado_em`
+em `documentos_conhecimento` via `ALTER TABLE` (sem apagar nada).
+
+**Ordem de execução importa — já causou um bug real nesta rodada:** o
+script lê `db/models_db.py` pra saber o formato novo. Se rodar **antes**
+de substituir esse arquivo, ele recria `conversas` no formato **antigo**
+de novo, e o servidor quebra (500) assim que sobe com o `models_db.py`
+novo esperando colunas que não existem de verdade no banco. A ordem
+certa é: **substituir todos os arquivos do backend primeiro → parar o
+servidor → rodar o script → subir o servidor de novo.** O script é
+idempotente, seguro rodar de novo quantas vezes precisar.
+
+---
+
+## 5.6 Hospedagem, deploy e como o frontend é servido
+
+### Arquitetura atual: um único processo serve tudo
+- O `uvicorn` serve **API + frontend na mesma porta/origem.** `main.py`
+  monta `StaticFiles(directory="../frontend", html=True)` em `"/"`,
+  **sempre como o último registro do app** (um mount em "/" captura
+  qualquer caminho não reconhecido; se viesse antes, "roubaria" as rotas
+  de API). A antiga rota `GET /` (JSON de status) virou `GET /health`.
+- `frontend/js/api.js` usa `const API = ""` (caminho relativo): resolve
+  sempre contra a origem de onde a página foi carregada — funciona local,
+  na Render e em qualquer domínio futuro. (Antes era `http://127.0.0.1:8000`
+  fixo, o que quebra em qualquer lugar que não seja a máquina do
+  desenvolvedor: o navegador tentava falar com o `127.0.0.1` de quem está
+  usando o site.)
+- **Não existe mais servidor separado de frontend.** Rodar
+  `python -m http.server` na pasta `frontend` junto com o `uvicorn` faz as
+  chamadas de API caírem num servidor de arquivos que devolve 404 para tudo
+  (e no Windows os dois conseguem "dividir" a mesma porta, IPv4 vs IPv6,
+  mascarando o erro).
+- No startup, `main.py` chama `Base.metadata.create_all()` (só cria tabela
+  que falta; nunca altera nem apaga existente — seguro sempre) e, se
+  `INITIAL_ADMIN_EMAIL` estiver definido, garante esse e-mail em
+  `administradores` (idempotente). Resolve o "ovo e galinha" de precisar já
+  ser admin para promover alguém, e é essencial em ambiente de disco
+  temporário. Pode ser desligado deixando a variável em branco.
+
+### Teste na Render (plano Free) — validado, serviu de aprendizado
+- Repositório GitHub privado `tirjalimentos/rj-hub` (pasta local
+  `D:\RJ HUB\rjhub-v2\`; o `.gitignore` já exclui `.env`, `*.db`, `venv/`).
+- Configuração: Root Directory `backend`; Build `pip install -r
+  requirements.txt`; Start `uvicorn main:app --host 0.0.0.0 --port $PORT`
+  (a porta vem da variável `$PORT`, não é fixa). URL de teste:
+  `https://rj-hub-1.onrender.com`. A Render usa Python 3.14 por padrão
+  (local: 3.12) — funcionou sem ajustes.
+- Variáveis de ambiente (no painel, não em arquivo): `ANTHROPIC_API_KEY`,
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `JWT_SECRET_KEY`,
+  `SESSION_SECRET_KEY`, `FRONTEND_URL`, `INITIAL_ADMIN_EMAIL` (opcional:
+  `GOOGLE_ALLOWED_DOMAIN=rjalimentos.com.br`).
+- O auto-deploy por `git push` às vezes não disparou: sempre conferir no log
+  a linha `Checking out commit <hash>` e, se necessário, usar Manual Deploy
+  → Deploy latest commit. Um log só com "Shutting down → Running uvicorn"
+  é o serviço acordando, NÃO um deploy novo.
+- No plano Free o serviço dorme e o disco é temporário: o banco SQLite
+  nasce vazio a cada restart (tabelas recriadas, mas sem especialistas nem
+  documentos — recriar pelo painel). **Isso é efeito só do plano Free.**
+  Todas as correções de código acima (URL relativa, StaticFiles, chaves
+  fortes, FRONTEND_URL, create_all, INITIAL_ADMIN_EMAIL) valem para
+  qualquer hospedagem e não precisam ser desfeitas.
+
+### Decisão: produção na Locaweb (VPS Linux)
+- O plano de hospedagem que a RJ já tem na Locaweb (sites ilimitados,
+  MySQL/PostgreSQL, e-mail; pilha LAMP, sem root) **não roda o backend**
+  (precisa de processo Python persistente). Serve para o **domínio** (ex:
+  `hub.rjalimentos.com.br`, via DNS) e já inclui 3 bancos PostgreSQL.
+- Produto escolhido: **VPS Linux (Ubuntu)**. Opções avaliadas, ambas com 2
+  vCPU: 2 GB RAM / 60 GB SSD (R$ 382,80/ano ≈ R$ 31,90/mês) e 4 GB RAM /
+  70 GB SSD (R$ 742,80/ano ≈ R$ 61,90/mês). Recomendação: **4 GB** (meta de
+  30 usuários simultâneos; evita upgrade com reboot depois). Disco não é
+  fator (projeto < 1 GB hoje). Valor/escolha final a alinhar com o diretor.
+- Por que Locaweb e não Render: custo (Render com RAM equivalente: Standard
+  ≈ US$ 25 e Pro ≈ US$ 85 por mês), já são clientes, suporte em português
+  24/7, cobrança em Real, dado no Brasil. Contra: a manutenção do servidor
+  passa a ser nossa.
+- Windows Server 2012 R2 da empresa: **descartado para produção** (fim do
+  suporte ESU em 13/10/2026; sem patches de segurança depois disso).
+- A configurar no VPS: Ubuntu, Nginx como proxy reverso + HTTPS (Let's
+  Encrypt), `systemd` mantendo o `uvicorn` de pé, deploy via `git pull`,
+  firewall, atualizações de segurança automáticas, backup do `rjhub.db`.
+  Confirmar com o suporte se o VPS com cPanel suporta app Python/ASGI
+  (poderia simplificar).
+- **Pendência marcada para a migração de produção:** em
+  `backend/db/database.py`, habilitar SQLite em modo WAL + `busy_timeout`
+  (30 pessoas gravando conversas ao mesmo tempo podem gerar "database is
+  locked"). A pessoa pediu para ser lembrada disso nesse momento.
+
+---
+
+## 5.7 Tema visual: Padrão / Escuro / Sistema
+
+- Escolha na aba **Configurações → Aparência** (`.theme-opt`, com
+  `data-theme="padrao|escuro|sistema"`). Guardada em `localStorage`
+  (`rjhub_tema`) — é preferência do navegador/dispositivo, não da conta.
+- `ui.js`: `aplicarTema()` resolve a preferência e seta/remove
+  `data-theme="escuro"` no `<html>`. "Sistema" decide na hora via
+  `matchMedia('(prefers-color-scheme: dark)')` e reage se o SO mudar; Padrão
+  e Escuro escolhidos manualmente ignoram o SO. Um script inline no `<head>`
+  do `index.html` aplica o tema salvo antes do CSS, evitando "piscar".
+- CSS: `:root` = **Padrão**, idêntico ao visual original (identidade
+  vinho/dourado — não alterar sem pedido). `[data-theme="escuro"]` redefine
+  as variáveis e traz poucos ajustes pontuais para cores hex fixas (header
+  translúcido, fundo do chat, ícones, avatar do usuário, botão "danger").
+  A sidebar já era escura por design e não muda entre temas.
+- **Regra para componentes novos:** fundo de card/painel = `var(--surface)`,
+  NUNCA `var(--white)` (que é só texto/ícone branco sobre fundo colorido e
+  fica igual nos dois temas). Evitar cores hex fixas; se inevitável, criar o
+  override no bloco `[data-theme="escuro"]`.
+- Estado: primeiro passe feito sem ver o resultado renderizado (as cores
+  escuras são estimativa) — esperar feedback visual da pessoa e ajustar.
 
 ---
 
@@ -535,8 +821,10 @@ pip install -r requirements.txt
 ANTHROPIC_API_KEY=sk-ant-...
 GOOGLE_CLIENT_ID=...apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-...
-JWT_SECRET_KEY=qualquer-string-nao-vazia
-SESSION_SECRET_KEY=qualquer-outra-string-nao-vazia
+JWT_SECRET_KEY=<token_urlsafe(32)>
+SESSION_SECRET_KEY=<outro token_urlsafe(32)>
+FRONTEND_URL=http://localhost:8000
+INITIAL_ADMIN_EMAIL=seu.email@rjalimentos.com.br
 ```
 `core/config.py` carrega o `.env` a partir do **caminho absoluto do
 próprio arquivo** (`Path(__file__).resolve().parent.parent / ".env"`),
@@ -555,20 +843,18 @@ python -m db.seed
 Idempotente — seguro rodar de novo. Se uma tabela nova foi adicionada,
 apagar `rjhub.db` antes e rodar de novo do zero.
 
-**Subir o servidor:**
+**Subir (um único processo, uma única janela de CMD):**
 ```bash
+cd backend
+venv\Scripts\activate
 uvicorn main:app --reload
 ```
-API em `http://127.0.0.1:8000`, documentação automática em
-`http://127.0.0.1:8000/docs`.
-
-**Frontend:**
-```bash
-cd frontend
-python -m http.server 8080
-```
-Nunca abrir `index.html` direto com `file://` (por causa do CORS). Acesse
-`http://127.0.0.1:8080`.
+O app completo (frontend + API) fica em `http://localhost:8000/`; docs
+automáticas em `/docs`. **Não rodar servidor separado do frontend** (ver
+seção 5.6). Acessar sempre pelo mesmo endereço cadastrado no Google Console
+(`localhost` ≠ `127.0.0.1`) e com `FRONTEND_URL` igual a ele no `.env`.
+Ao subir, o app cria as tabelas que faltam e garante `INITIAL_ADMIN_EMAIL`
+como Super-Admin.
 
 **Como validar que tudo está integrado:** faça login com um e-mail
 corporativo. Com o backend rodando, o Console (F12) deve mostrar os
@@ -582,6 +868,92 @@ está caindo em algum caminho de simulação antigo, não na API real.
 
 ## 7. Estado atual (checkpoint)
 
+### ✅ Sessão mais recente (set–nov/2026)
+- **Respostas do especialista em Markdown** (títulos, listas, negrito) —
+  prompt + `renderMarkdown` + CSS (seção 5.2). Testado com um caso real
+  (cadastro de RCA na rotina 517): ficou legível e organizado.
+- **Deploy de teste na Render validado** (seção 5.6): GitHub → auto-deploy,
+  login Google e chat funcionando na URL pública. Bugs encontrados e
+  corrigidos no caminho: URL da API fixa em `127.0.0.1`; frontend não era
+  servido pelo backend; `FRONTEND_URL` com padrão errado (login redirecionava
+  para o localhost de quem logava); chaves JWT/sessão curtas; banco sem
+  tabelas (`create_all`); ninguém admin no banco novo (`INITIAL_ADMIN_EMAIL`).
+- **Rodar local de novo com servidor único** (porta 8000, sem `http.server`) e
+  login local restaurado depois de cadastrar `http://localhost:8000/auth/callback`
+  no Google Console (`redirect_uri_mismatch`).
+- **Tema Padrão / Escuro / Sistema** na aba Configurações (seção 5.7) —
+  funcionando; ajuste fino de cores do escuro pode ser necessário.
+- **Decisão de hospedagem tomada: Locaweb VPS Linux** (seção 5.6); falta
+  contratar/configurar e fechar 2 GB vs 4 GB com o diretor.
+- **Direções novas pedidas** (ainda não desenhadas/implementadas): perfis
+  Admin / Supervisor / Usuário; plataforma editável pelo Super-Admin dentro
+  dela mesma (sem mexer no código); conexão com o DataLake (ver seção 8).
+- Nenhuma apresentação à diretoria marcada — sem prazo.
+
+### Histórico anterior (ago/2026)
+
+### ✅ RESOLVIDO — painel de Super-Admin não abria nenhuma aba
+Sintoma original: logado como Super-Admin (`pedro.santos@rjalimentos.com.br`),
+clicar em "Super-Admin" e depois em qualquer uma das 5 abas não abria
+nada, nenhuma informação aparecia. Logado como usuário comum
+(`bruno.santos@rjalimentos.com.br`), tudo funcionava normalmente.
+
+**Causa raiz confirmada via log do Console (F12):** `buscarCategoriasBiblioteca`
+tinha sumido do `api.js` do usuário (mesma função já corrigida numa
+sessão anterior, aparentemente perdida de novo numa edição/cópia
+manual). Como `app.js` chama essa função dentro de `await
+carregarDadosIniciais()`, o `ReferenceError` interrompia a execução
+**antes** de `initAdminEvents()` conseguir registrar os cliques das
+abas — por isso nada respondia, mesmo o painel parecendo carregado.
+
+**Correção:** função reintroduzida em `api.js`, no mesmo padrão de
+`buscarDocumentosRecentes` (mesmo tratamento de erro, mesma exigência de
+Super-Admin). Confirmado pelo usuário: todas as 5 abas abrem normalmente
+agora.
+
+**2 bugs reais adicionais, encontrados e corrigidos durante essa mesma
+investigação** (antes da causa raiz acima ser encontrada): (1)
+`buscarDashboardStats`/`buscarDashboardBars` nunca tinham sido conectadas
+no `app.js` reescrito (Dashboard sempre mostrava mock antigo) —
+corrigido, `DASH_STATS`/`DASH_BARS` viraram `let` com fallback `_MOCK`
+no padrão do resto do projeto; (2) ver bug seguinte, encontrado na
+sequência.
+
+### ✅ RESOLVIDO — especialista criado não aparecia no painel de Admin
+Sintoma: especialista criado pela aba Especialistas era salvo de
+verdade no backend (confirmado via `GET /admin/especialistas`), mas não
+aparecia na própria aba Especialistas nem no checklist de vínculo da
+aba Grupos, mesmo com hard refresh e novo login.
+
+**Causa:** `admin.js` usava `SPECIALISTS` (lista filtrada por RBAC) em
+vez de uma lista sem filtro em três lugares do painel — e como um
+especialista recém-criado ainda não pertence a grupo nenhum, ele nunca
+aparecia. Pior: como o checklist de vínculo da aba Grupos também lia a
+lista filtrada, era impossível vinculá-lo por ali — um ciclo (precisa
+de grupo pra aparecer, precisa aparecer pra ganhar um grupo).
+
+**Correção:** nova variável `ADMIN_ESPECIALISTAS_TODOS` (sem filtro, via
+`GET /admin/especialistas`), usada em todo o painel de Admin —
+`SPECIALISTS` (RBAC filtrada) continua intocada pro resto da interface.
+Ver seção 5.3, "Ponto de atenção", para o detalhe completo — importante
+lembrar disso ao adicionar qualquer tela nova ao painel de Admin.
+Confirmado pelo usuário: funcionando.
+
+### ✅ Novas funcionalidades desta sessão: excluir especialista + exportar documentos
+- **Excluir especialista** — bloqueia (não exclui em cascata, decisão
+  deliberada) se houver documentos, vínculo com grupo, presença em
+  workspace, ou conversas registradas; mensagem de erro específica por
+  tipo de bloqueio.
+- **Exportar documentos** — baixa um `.zip` com um `.txt` por documento
+  do especialista, como backup manual (não apaga nada do banco). Serve
+  de passo intermediário antes de limpar a Base de Conhecimento pra
+  desbloquear a exclusão.
+
+Detalhes técnicos completos (rotas, services, decisões de design) na
+seção 5.3. Confirmado pelo usuário: funcionando.
+
+---
+
 - **Frontend:** todas as views implementadas e funcionando, view de chat
   integrada (não modal) conectada à IA real. Redesign visual (Parte B) —
   **CONCLUÍDO**: sidebar fixa escura (`#171718`) + topbar com breadcrumb e
@@ -591,59 +963,91 @@ está caindo em algum caminho de simulação antigo, não na API real.
 - **Backend:** FastAPI com todos os recursos reais (especialistas,
   workspaces, biblioteca, conversas, dashboard, chat, admin, auth).
 - **Banco de dados (SQLite + SQLAlchemy) — CONCLUÍDO**, incluindo as
-  tabelas de RBAC/admin.
+  tabelas de RBAC/admin e o schema novo de `conversas`/`documentos_
+  conhecimento` (ver seção 5.5 — migrado via `scripts/migrar_schema_v2.py`).
 - **Motor de IA real (Anthropic/Claude) — CONCLUÍDO**, com tratamento de
   erro robusto (extended thinking, sobrecarga da API) e base de
   conhecimento real injetada no contexto.
-- **Autenticação corporativa (SSO Google) — CONCLUÍDO.**
+- **Autenticação corporativa (SSO Google) — CONCLUÍDO**, incluindo
+  identidade real do usuário aplicada em toda a interface (seção 5.5) —
+  chega de nome/e-mail hardcoded.
 - **Controle de acesso por grupo (RBAC) + painel de Super-Admin —
-  CONCLUÍDO, com interface visual própria** (`frontend/js/admin.js`):
-  Grupos, Usuários e Base de Conhecimento, ver seção 5.3. Promoção de
-  novos admins via `backend/promover_admin.py`, sem precisar editar o
-  seed.
+  CONCLUÍDO, com interface visual própria** (`frontend/js/admin.js`), 5
+  abas: Grupos, Usuários, Base de Conhecimento, Especialistas,
+  Administradores (ver seção 5.3). Promoção de novos admins via
+  `backend/promover_admin.py` ou pela própria aba Administradores.
+  Excluir especialista (bloqueia por dependência) e exportar documentos
+  em `.zip` (backup) — **adicionados e testados nesta sessão**.
+- **Conversas, Dashboard e Biblioteca com dado real — CONCLUÍDO** (ver
+  seção 5.5): conversas gravadas de verdade a cada troca de mensagem no
+  chat, Dashboard calculado com escopo por permissão (Admin vê tudo,
+  usuário comum só o próprio uso), Biblioteca unificada com a Base de
+  Conhecimento e restrita a Super-Admin.
 - **Modelo de especialistas — reduzido deliberadamente** para 1
   especialista institucional no lançamento inicial (ver seção 1), com a
-  arquitetura já pronta para expandir.
+  arquitetura já pronta pra expandir — inclusive pelo próprio painel
+  (aba Especialistas), sem precisar editar `seed.py`.
 - **Fonte de dados — só documentos estáticos por enquanto.** Decisão
   consciente de não conectar direto ao Oracle/ERP por segurança de dados;
-  Power BI é o caminho cogitado para dado dinâmico no futuro (empresa já
-  tem licenciamento Pro/Premium), ainda não implementado.
+  Power BI é o caminho cogitado para dado dinâmico (empresa já tem
+  licenciamento Pro/Premium) e, mais adiante, o **DataLake** da empresa
+  (provavelmente via API própria, ainda sem confirmação) — nada disso
+  implementado ainda; ver seção 8.
+- **Hospedagem em servidor/nuvem — decidido: Locaweb VPS Linux** (teste
+  prévio na Render concluído; ver seção 5.6 e seção 8).
 
 ---
 
 ## 8. Próximos passos (em ordem sugerida)
 
-Nenhuma decisão tomada ainda entre as frentes abaixo — dependem de
-prioridade de negócio, não de bloqueio técnico:
-
-1. **Definir o(s) próximo(s) especialista(s) de verdade.** A
-   infraestrutura de RBAC já suporta múltiplos; falta decidir qual área
-   entra em seguida e reunir/curar os documentos reais dela. Com o painel
-   de Super-Admin pronto, cadastrar o especialista, criar o grupo dele e
-   subir os documentos já pode ser feito pelo próprio portal, sem editar
-   `seed.py`.
-2. **Polimento de UX pendente, baixa prioridade:**
-   - Busca de verdade na topbar (hoje o botão "⌕ Busca" só leva pra
-     Especialistas com o campo em foco — não busca em documentos/
-     conversas ainda).
-   - Feedback visual além de `alert()` no painel de Super-Admin (toast/
-     notificação em vez de recarregar a lista silenciosamente).
-   - `LIB_CATS`/`CONVERSATIONS_FAVORITAS` ainda são buscados da API em
-     `app.js` mas não são mais exibidos em nenhuma view (perderam a seção
-     na Home/Biblioteca/Conversas durante o reskin) — ou remover a
-     chamada, ou trazer essas seções de volta, a decidir.
-
-Mais adiante, sem prioridade definida ainda:
-3. **Dado dinâmico via Power BI** (não Oracle direto — ver seção 7) para
-   métricas/indicadores em tempo real.
-4. **Migrar de SQLite para PostgreSQL** se o projeto for para produção com
-   acesso concorrente — a única mudança necessária é a `DATABASE_URL` em
-   `db/database.py`.
-5. **Hospedar em servidor/ambiente web real**, tirando a dependência da
-   máquina local do usuário ficar ligada.
+1. **Locaweb VPS (produção).** Fechar o plano com o diretor (2 GB vs 4 GB;
+   recomendado 4 GB), contratar, configurar (Ubuntu, Nginx + HTTPS, systemd,
+   firewall, atualizações automáticas, backup do `rjhub.db`), apontar o
+   domínio (ex: `hub.rjalimentos.com.br`, DNS na Locaweb), cadastrar o novo
+   redirect URI no Google Console, definir as variáveis de ambiente (com
+   chaves NOVAS) e `FRONTEND_URL` = domínio final. Perguntar ao suporte se o
+   VPS com cPanel suporta app Python/ASGI. Disco do VPS é persistente: o
+   SQLite deixa de zerar.
+2. **Antes de abrir para os usuários:** habilitar WAL + `busy_timeout` em
+   `db/database.py` (pendência marcada, seção 5.6); setar
+   `GOOGLE_ALLOWED_DOMAIN=rjalimentos.com.br`; recriar o(s) especialista(s) e
+   documentos pelo painel (banco novo nasce vazio); adicionar o domínio de
+   produção em `CORS_ORIGINS` se algo vier de outra origem (mesma origem não
+   precisa).
+3. **Perfis Admin / Supervisor / Usuário.** Hoje só existe Super-Admin vs
+   usuário comum. Falta definir o que o Supervisor pode fazer (hipóteses:
+   ver dashboard/conversas só do time; gerenciar documentos só da própria
+   área, sem mexer em Grupos/Usuários/Administradores) e então modelar o
+   papel no banco, seguindo a regra 11 (negar por padrão) e a camada da
+   regra 9.
+4. **Plataforma editável pelo Super-Admin** (sem mexer no código): ideia de
+   uma aba "Configurações" no painel reunindo ajustes da plataforma (ex:
+   tema padrão). Qualquer decisão nova deve deixar esse caminho aberto.
+5. **DataLake e dado dinâmico.** Sem prazo. Esperar o time do DataLake
+   concluir e então levantar: mecanismo de autenticação, se a API é acessível
+   a partir do VPS (rede/VPN/whitelist), maturidade e documentação, formato
+   de resposta, limites de chamadas, e quais dados o especialista precisa.
+   Para Power BI: a API "Execute Queries" (JSON) funciona com licença Pro;
+   exige app no Azure AD (service principal), tenant admin habilitar
+   "Dataset Execute Queries REST API" e uso de service principals, com
+   permissão Build+Read só no dataset necessário. Arquitetura recomendada:
+   o modelo consulta sob demanda via *tool use* da Anthropic, em vez de
+   despejar números no prompt (hoje o contexto é só documento estático).
+6. **Definir o(s) próximo(s) especialista(s) de verdade** (área + documentos
+   reais) e lembrar de vincular ao grupo certo (criar sozinho não libera
+   acesso a ninguém).
+7. **Polimento de UX, baixa prioridade:**
+   - Ajustes finos do tema escuro conforme feedback visual.
+   - Busca de verdade na topbar (hoje só leva pra Especialistas).
+   - Feedback visual além de `alert()` no painel de Super-Admin (toasts).
+   - `CONVERSATIONS_FAVORITAS` ainda é buscada em `app.js` mas não exibida
+     em nenhuma view — remover a chamada ou trazer a seção de volta.
+8. **PostgreSQL** só se houver múltiplas instâncias ou necessidade do
+   DataLake (a Locaweb já inclui 3 bancos PostgreSQL no plano atual; a
+   mudança de código é basicamente a `DATABASE_URL`).
 
 Não pule etapas — cada uma dessas deve nascer seguindo exatamente os
-mesmos padrões já estabelecidos nas seções 3, 5, 5.1, 5.2, 5.3 e 5.4.
+mesmos padrões já estabelecidos nas seções 3, 5, 5.1, 5.2, 5.3, 5.4 e 5.5.
 
 ---
 
@@ -678,7 +1082,16 @@ mesmos padrões já estabelecidos nas seções 3, 5, 5.1, 5.2, 5.3 e 5.4.
 - Entregue mudanças arquivo por arquivo (a pessoa não está usando Claude
   Code, está copiando os arquivos manualmente para a pasta local em
   `D:\RJ HUB\rjhub-v2\`) — não assuma que ela vai rodar comandos de
-  automação além dos que já usa (`uvicorn`, `python -m http.server`,
-  `python -m db.seed`).
+  automação além dos que já usa (`git add/commit/push`, `uvicorn`,
+  `python -m db.seed`). O ambiente dela é Windows com CMD.
+- Ao pedir que a pessoa rode o projeto local, lembre: **um único `uvicorn`
+  em `localhost:8000`**, sem servidor separado de frontend (seção 5.6).
+- Ao adicionar CSS, use `var(--surface)` para fundos de card/painel — nunca
+  `var(--white)` (seção 5.7) — para não quebrar o tema escuro.
+- Antes de dizer que um deploy novo "pegou", confira no log da hospedagem o
+  hash do commit; auto-deploy às vezes não dispara.
+- Erros de login Google: `redirect_uri_mismatch` → URI não cadastrado no
+  Google Console; redirecionamento para endereço errado após logar →
+  `FRONTEND_URL` (seção 5.4).
 - Depois de qualquer mudança, oriente exatamente como testar (o que
   esperar no console do navegador, o que checar em `/docs`).
